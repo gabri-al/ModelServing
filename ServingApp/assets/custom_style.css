@@ -43,6 +43,50 @@ h4 {
     text-align: left;
 }
 
+/* === PAGE CONTENT ===*/
+.IO-outer-col {
+    background-color: rgba(255, 255, 255, 5.0%);
+    border-radius: 8px;
+    margin: 10px 10px 0px 5px;
+}
+
+.IO-inner-row {
+    margin: 8px 0px 8px 0px;
+}
+
+.IO-inner-row-wButton {
+    padding: 15px 8px 15px 8px;
+    text-align: center;
+}
+
+.my-input {
+    background: None !important;
+    font-size: 11px;
+    padding: 0px 5px 0px 5px;
+    color: #e9e9e9;
+    border: solid 1px #e9e9e9;
+    border-radius: 8px;
+    width: 120px;
+}
+
+.my-button {
+    padding: 5px 5px 5px 5px;
+    color: #e9e9e9;
+    font-size: 0.8em;
+    background-color: rgba(255, 255, 255, 25.0%);
+    border: solid 1px #3edacf;
+    border-radius: 8px;
+    box-shadow: 0 0 5px #2b4162;
+}
+
+.my-button:hover {
+    box-shadow: 0 0 10px #2b4162;
+}
+
+.my-button:active {
+    box-shadow: 0 0 10px #3edacf;
+  }
+
 /* === FOOTER ===*/
 .hr-footer {
     height: 5px;
