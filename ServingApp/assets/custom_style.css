@@ -87,6 +87,17 @@ h4 {
     box-shadow: 0 0 10px #3edacf;
   }
 
+.alert-style, .alert-style-danger {
+    padding: 20px 0px 20px 0px;
+    text-align: center;
+    margin: 170px 10px 170px 10px;
+    font-size: 16px;
+}
+
+.alert-style-danger {
+    font-size: 10px !important;
+}
+
 /* === FOOTER ===*/
 .hr-footer {
     height: 5px;
