@@ -1,7 +1,8 @@
 import dash
-from dash import html, dcc, callback, Input, Output
+from dash import html, dcc, callback, Input, Output, ctx
 import dash_bootstrap_components as dbc
 import pandas as pd
+from dash.exceptions import PreventUpdate
 
 dash.register_page(__name__, path='/', name='Home', title='Model Serving')
 
@@ -80,41 +81,51 @@ layout = dbc.Container([
     Input(component_id='feature6', component_property='value'),
     Input(component_id='feature7', component_property='value'),
     Input(component_id='feature8', component_property='value'),
-    Input(component_id='feature9', component_property='value'))
-def data_transform(feature0, feature1, feature2, feature3, feature4, feature5, feature6, feature7, feature8, feature9):
+    Input(component_id='feature9', component_property='value'),
+    Input(component_id='submit-button', component_property='n_clicks'))
+def data_transform(feature0, feature1, feature2, feature3, feature4, feature5, feature6, feature7, feature8, feature9, button_clicks):
     _output = []
-    try:
-        feature0clean = float(feature0)
-        feature1clean = float(feature1)
-        feature2clean = float(feature2)
-        feature3clean = float(feature3)
-        feature4clean = float(feature4)
-        feature5clean = float(feature5)
-        feature6clean = float(feature6)
-        feature7clean = float(feature7)
-        feature8clean = float(feature8)
-        feature9clean = float(feature9)
-        feature_df = pd.DataFrame({
-            'latitude': [feature0clean],
-            'longitude': [feature1clean],
-            'is_entire_apt': [feature2clean],
-            'is_private_room': [feature3clean],
-            'is_shared_room': [feature4clean],
-            'minimum_nights': [feature5clean],
-            'number_of_reviews': [feature6clean],
-            'reviews_per_month': [feature7clean],
-            'calculated_host_listings_count': [feature8clean],
-            'availability_365': [feature9clean]})
-    except:
-        _output = dbc.Alert(children=['Insert valid features'], color='warning', class_name='alert-style')
-        return _output
-
-    _response = score_model(feature_df)
-    print(_response)
-    if _response.status_code != 200: # Failure
-        _output = dbc.Alert(children=['Request failed with status: '+str(_response.status_code)+', '+str(_response.text)],
-                            color='danger', class_name='alert-style-danger')
+    if ctx.triggered_id == 'submit-button':
+        # Verify input values' format
+        try:
+            feature0clean = float(feature0)
+            feature1clean = float(feature1)
+            feature2clean = float(feature2)
+            feature3clean = float(feature3)
+            feature4clean = float(feature4)
+            feature5clean = float(feature5)
+            feature6clean = float(feature6)
+            feature7clean = float(feature7)
+            feature8clean = float(feature8)
+            feature9clean = float(feature9)
+            feature_df = pd.DataFrame({
+                'latitude': [feature0clean],
+                'longitude': [feature1clean],
+                'is_entire_apt': [feature2clean],
+                'is_private_room': [feature3clean],
+                'is_shared_room': [feature4clean],
+                'minimum_nights': [feature5clean],
+                'number_of_reviews': [feature6clean],
+                'reviews_per_month': [feature7clean],
+                'calculated_host_listings_count': [feature8clean],
+                'availability_365': [feature9clean]})
+        except:
+            _output = dbc.Alert(children=['Insert valid features'], color='warning', class_name='alert-style')
+            return _output
+        # Query endpoint API
+        _response = score_model(feature_df)
+        if _response.status_code != 200: # Failure
+            _output = dbc.Alert(children=['Request failed with status: '+str(_response.status_code)+', '+str(_response.text)],
+                                color='danger', class_name='alert-style-danger')
+        else: # Success
+            try: # Try extracting prediction
+                _pred = _response.json()['predictions']
+                _pred_str = []
+                for p in _pred:
+                    _pred_str.append(str(round(p, 3)))
+                _output = ["Predicted listing prices: ", dbc.Alert(children=_pred_str,color='success', class_name='alert-style')]
+            except:
+                _output = dbc.Alert(children=['Request succeeded but prediction was not available'], color='danger', class_name='alert-style-danger')
     else:
-        _output = dbc.Alert(children=['Success'],color='success', class_name='alert-style')
-    
+        raise PreventUpdate
     return _output
