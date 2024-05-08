@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # AirBnb NY Listing Price Prediction ~ Data Preparation
+# MAGIC # AirBnb NY Listing Price Prediction: Data Preparation
 
 # COMMAND ----------
 
@@ -65,10 +65,7 @@ display(spark.sql("SELECT * FROM bronze_v LIMIT 10;"))
 # MAGIC Cleaning steps required:
 # MAGIC * Remove duplicates
 # MAGIC * Remove invalid characters from price column (e.g., $ ,)
-# MAGIC * Remove columns with >50% Null values
-# MAGIC * Remove columns with same value on all rows or different values on every row
 # MAGIC * Remove invalid availabilities (e.g., 0 or >365)
-# MAGIC * Remove rows containing nulls
 
 # COMMAND ----------
 
@@ -151,45 +148,8 @@ silver_step1['price'] = silver_step1['price'].astype(float)
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC #### 2-Remove Uninformative Columns
-
-# COMMAND ----------
-
-display(silver_step1.info())
-
-# COMMAND ----------
-
-silver_step1.describe(percentiles=[.25, .5, .75])
-
-# COMMAND ----------
-
-# Drop columns
-silver_step2 = silver_step1.copy()
-to_drop = ['id','name','host_id','house_rules','license','host_name', ## Too many unique values
-           'last_review', 'reviews_per_month',  ## Too many null values
-           'country','country_code' ## Too few unique values
-           ]
-for c in to_drop:
-  silver_step2 = silver_step2.drop(c, axis=1)
-
-display(silver_step2.info())
-
-# COMMAND ----------
-
-# Drop NAs
-silver_step3 = silver_step2.copy()
-for c in list(silver_step3.columns):
-  len_pre = len(silver_step3)
-  silver_step3.dropna(axis=0, subset=c, inplace=True)
-  len_post = len(silver_step3)
-  if len_pre>len_post:
-    print(":: On col %s, removed %4d NAs" % (c, len_pre - len_post))
-
-# COMMAND ----------
-
 # Save into silver table
-silver_step4 = spark.createDataFrame(silver_step3).createOrReplaceTempView("silver_v")
+silver_step1 = spark.createDataFrame(silver_step1).createOrReplaceTempView("silver_v")
 
 # COMMAND ----------
 
@@ -200,5 +160,125 @@ silver_step4 = spark.createDataFrame(silver_step3).createOrReplaceTempView("silv
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ### [Gold data] Finalize data preparation for ML
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Steps required:
+# MAGIC
+# MAGIC * Remove uninformative columns (same value on all rows or different values on every row, columns with >50% Null values)
+# MAGIC * Remove NAs
+# MAGIC * Encode required categorical columns
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### 1-Remove Uninformative Columns & NAs
+
+# COMMAND ----------
+
+gold1 = spark.sql("SELECT * from silver_data").toPandas()
+display(gold1.info())
+
+# COMMAND ----------
+
+gold1.describe(percentiles=[.25, .5, .75])
+
+# COMMAND ----------
+
+# Drop columns
+gold_step1 = gold1.copy()
+to_drop = ['name','host_id','house_rules','license','host_name', ## Too many unique values
+           'last_review', 'reviews_per_month',  ## Too many null values
+           'country','country_code', ## Too few unique values
+           'service_fee' ## Unlikely this info is available when we predict the price
+           ]
+for c in to_drop:
+  gold_step1 = gold_step1.drop(c, axis=1)
+
+display(gold_step1.info())
+
+# COMMAND ----------
+
+# Drop NAs
+gold_step2 = gold_step1.copy()
+for c in list(gold_step2.columns):
+  len_pre = len(gold_step2)
+  gold_step2.dropna(axis=0, subset=c, inplace=True)
+  len_post = len(gold_step2)
+  if len_pre>len_post:
+    print(":: On col %s, removed %4d NAs" % (c, len_pre - len_post))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### 2-Encode Categorical Columns
+
+# COMMAND ----------
+
+## Check values per column
+for col in gold_step2.columns:
+  if gold_step2[col].dtype == 'object' and col != 'id':
+    gold_groupby = gold_step2.groupby(col).agg(records=('price','count'), avg_price=('price', 'mean'), std_price=('price', 'std'))
+    gold_groupby.reset_index(inplace=True)
+    print(":: %s has %2d unique values" % (col, len(gold_groupby)))
+    gold_groupby.sort_values(by=col, inplace=True)
+    display(gold_groupby)
+    print("\n")
+
+# COMMAND ----------
+
+## Encode column with few (<10) unique values, drop the others
+gold_step3 = spark.createDataFrame(gold_step2).createOrReplaceTempView("gold_v")
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC DROP TABLE IF EXISTS gold_data;
+# MAGIC CREATE TABLE gold_data AS
+# MAGIC Select 
+# MAGIC   id
+# MAGIC   ,cast(case when host_identity_verified = 'verified' then 1 else 0 end as float) as is_host_identity_verified
+# MAGIC   /* Neighborhood groups = Bronx, Brooklyn, Manhattan, Queens, Staten Island */
+# MAGIC   ,cast(case when neighbourhood_group = 'Bronx' then 1 else 0 end as float) is_neighbourhood_group_Bronx
+# MAGIC   ,cast(case when neighbourhood_group = 'Brooklyn' then 1 else 0 end as float) is_neighbourhood_group_Brooklyn
+# MAGIC   ,cast(case when neighbourhood_group = 'Manhattan' then 1 else 0 end as float) is_neighbourhood_group_Manhattan
+# MAGIC   ,cast(case when neighbourhood_group = 'Queens' then 1 else 0 end as float) is_neighbourhood_group_Queens
+# MAGIC   /* dropping neighbourhood column */
+# MAGIC   ,cast(lat as float)
+# MAGIC   ,cast(long as float)
+# MAGIC   ,cast(case when instant_bookable = 'TRUE' then 1 else 0 end as float) is_instant_bookable
+# MAGIC   /* cancellation_policy = flexible, moderate, strict */
+# MAGIC   ,cast(case when cancellation_policy = 'flexible' then 1 else 0 end as float) is_cancellation_policy_flexible
+# MAGIC   ,cast(case when cancellation_policy = 'strict' then 1 else 0 end as float) is_cancellation_policy_strict
+# MAGIC   /* room_type = Entire home/apt, Hotel room, Private room, Shared room */
+# MAGIC   ,cast(case when room_type = 'Entire home/apt' then 1 else 0 end as float) is_room_type_Entire
+# MAGIC   ,cast(case when room_type = 'Private room' then 1 else 0 end as float) is_room_type_Privateroom
+# MAGIC   ,cast(case when room_type = 'Shared room' then 1 else 0 end as float) is_room_type_Sharedroom
+# MAGIC   ,cast(construction_year as float) construction_year
+# MAGIC   ,cast(minimum_nights as float) minimum_nights
+# MAGIC   ,cast(number_of_reviews as float) number_of_reviews
+# MAGIC   ,cast(review_rate_number as float) review_rate_number
+# MAGIC   ,cast(calculated_host_listings_count as float) calculated_host_listings_count
+# MAGIC   ,cast(availability_365 as float) availability_365
+# MAGIC   ,cast(price as float) price
+# MAGIC from gold_v;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * from gold_data limit 10;
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Final counts
+
+# COMMAND ----------
+
 display(spark.sql("select count(*) from bronze_data;"))
 display(spark.sql("select count(*) from silver_data;"))
+display(spark.sql("select count(*) from gold_data;"))
