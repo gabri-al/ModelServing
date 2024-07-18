@@ -38,8 +38,9 @@ spark.sql("USE SCHEMA "+schema_)
 
 # COMMAND ----------
 
-XGB_run_id = 'c84875234e8a49cdac549e991290505c'
-RF_run_id = 'acc17c307379492fafa66bb2013836ab'
+_mlflow_exp = '/Users/gabriele.albini@databricks.com/PricePrediction_mlflow/NY'
+XGB_run_id = '2a594cc2b447442ba78a78f4962eea7d'
+RF_run_id = '3026c33a367b4f7dbd281e8d5ff19db8'
 
 # COMMAND ----------
 
@@ -146,7 +147,7 @@ print("\nTrue price for random point: %.3f" % yTest)
 # COMMAND ----------
 
 # Save model into a run
-experiment_ = mlflow.set_experiment("/Users/gabriele.albini@databricks.com/ModelServing_mlflow/NY_Price_Listings")
+experiment_ = mlflow.set_experiment(_mlflow_exp)
 with mlflow.start_run(experiment_id=experiment_.experiment_id, run_name="Pyfunc_Model") as run:
   mlflow.pyfunc.log_model("Pyfunc_NY_CustomModel",
                           python_model = myCustomModel,
