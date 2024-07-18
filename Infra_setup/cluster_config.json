@@ -6,14 +6,6 @@
     "cluster_name": "Gab_ML_Cluster",
     "spark_version": "14.3.x-cpu-ml-scala2.12",
     "spark_conf": {},
-    "aws_attributes": {
-        "first_on_demand": 1,
-        "availability": "SPOT_WITH_FALLBACK",
-        "zone_id": "auto",
-        "instance_profile_arn": null,
-        "spot_bid_price_percent": 100,
-        "ebs_volume_count": 0
-    },
     "node_type_id": "d3.2xlarge",
     "ssh_public_keys": [],
     "custom_tags": {},
@@ -23,12 +15,11 @@
     },
     "autotermination_minutes": 75,
     "init_scripts": [
-    {
-      "volumes": {
-        "destination":"/Volumes/price_prediction_ga/ny_listing/init/cluster_script.sh"
+      {
+        "volumes": {
+          "destination":"/Volumes/price_prediction_ga/ny_listing/init/cluster_script.sh"}
       }
-    }
-  ],
+    ],
     "single_user_name": "gabriele.albini@databricks.com",
     "data_security_mode": "SINGLE_USER",
     "runtime_engine": "STANDARD"
