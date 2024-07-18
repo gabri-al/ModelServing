@@ -14,21 +14,13 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install mlflow==2.11.1
-# MAGIC %pip install scikit-learn==1.4.0
-
-# COMMAND ----------
-
-dbutils.library.restartPython()
-
-# COMMAND ----------
-
 import mlflow
 from mlflow.models import infer_signature
 import pandas as pd
 import random
 import numpy
 import json
+import os
 
 # COMMAND ----------
 
@@ -37,8 +29,10 @@ import json
 
 # COMMAND ----------
 
-catalog_ = f"price_prediction"
-schema_ = f"ny_listing"
+#catalog_ = f"price_prediction"
+#schema_ = f"ny_listing"
+catalog_ = os.getenv('CATALOG_NAME')
+schema_ = os.getenv('SCHEMA_NAME')
 spark.sql("USE CATALOG "+catalog_)
 spark.sql("USE SCHEMA "+schema_)
 
@@ -156,7 +150,7 @@ experiment_ = mlflow.set_experiment("/Users/gabriele.albini@databricks.com/Model
 with mlflow.start_run(experiment_id=experiment_.experiment_id, run_name="Pyfunc_Model") as run:
   mlflow.pyfunc.log_model("Pyfunc_NY_CustomModel",
                           python_model = myCustomModel,
-                          pip_requirements = ["pandas","numpy", "mlflow==2.11.1", "scikit-learn==1.4.0"],
+                          pip_requirements = ["pandas", "numpy", "mlflow==2.11.1", "scikit-learn==1.4.1.post1"],
                           signature = signature_)
   run_id = mlflow.active_run().info.run_id
 
@@ -165,7 +159,6 @@ print(run_id)
 # COMMAND ----------
 
 # Copy paste mlflow code to register model
-# run_id = '77190521227443d6bfb2b3abaeaf8c54'
 model_name = "Pyfunc_NY_CustomModel"
 mlflow.set_registry_uri("databricks-uc")
 mlflow.register_model(
