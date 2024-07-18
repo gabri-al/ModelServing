@@ -14,8 +14,12 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install mlflow
-# MAGIC %pip install scikit-learn==1.4.1.post1
+# MAGIC %pip install mlflow==2.11.1
+# MAGIC %pip install scikit-learn==1.4.0
+
+# COMMAND ----------
+
+dbutils.library.restartPython()
 
 # COMMAND ----------
 
@@ -37,6 +41,11 @@ catalog_ = f"price_prediction"
 schema_ = f"ny_listing"
 spark.sql("USE CATALOG "+catalog_)
 spark.sql("USE SCHEMA "+schema_)
+
+# COMMAND ----------
+
+XGB_run_id = 'c84875234e8a49cdac549e991290505c'
+RF_run_id = 'acc17c307379492fafa66bb2013836ab'
 
 # COMMAND ----------
 
@@ -106,8 +115,8 @@ print(xTest_api)
 ## Prepare class parameter and input data
 weights_ = [0.4, 0.6]
 uri_models_ = [
-  "runs:/3c07ac2132a64ea2adfe6b14471c22ad/model", # RF Model
-  "runs:/892c69ea5f124e61b8efc8f36c5761e4/model" # XGB Model
+  f"runs:/{RF_run_id}/model", # RF Model
+  f"runs:/{XGB_run_id}/model" # XGB Model
 ]
 input_data_df = xTest.copy()
 input_data = xTest_api
@@ -143,11 +152,11 @@ print("\nTrue price for random point: %.3f" % yTest)
 # COMMAND ----------
 
 # Save model into a run
-experiment_ = mlflow.set_experiment("/Users/gabriele.albini@databricks.com/ModelServing_mlflow/NY_Price_Listings_Testing")
+experiment_ = mlflow.set_experiment("/Users/gabriele.albini@databricks.com/ModelServing_mlflow/NY_Price_Listings")
 with mlflow.start_run(experiment_id=experiment_.experiment_id, run_name="Pyfunc_Model") as run:
   mlflow.pyfunc.log_model("Pyfunc_NY_CustomModel",
                           python_model = myCustomModel,
-                          pip_requirements = ["pandas","numpy", "scikit-learn==1.4.1.post1"],
+                          pip_requirements = ["pandas","numpy", "mlflow==2.11.1", "scikit-learn==1.4.0"],
                           signature = signature_)
   run_id = mlflow.active_run().info.run_id
 
@@ -156,12 +165,10 @@ print(run_id)
 # COMMAND ----------
 
 # Copy paste mlflow code to register model
-run_id = '2d78e9be1a8b4c1280256240e81748e1'
-catalog = "gabrielealbini_catalog"
-schema = "airbnb"
+# run_id = '77190521227443d6bfb2b3abaeaf8c54'
 model_name = "Pyfunc_NY_CustomModel"
 mlflow.set_registry_uri("databricks-uc")
 mlflow.register_model(
     model_uri="runs:/"+run_id+"/Pyfunc_NY_CustomModel",
-    name=f"{catalog}.{schema}.{model_name}"
+    name=f"{catalog_}.{schema_}.{model_name}"
 )
