@@ -39,8 +39,8 @@ spark.sql("USE SCHEMA "+schema_)
 # COMMAND ----------
 
 _mlflow_exp = '/Users/gabriele.albini@databricks.com/PricePrediction_mlflow/NY'
-XGB_run_id = '2a594cc2b447442ba78a78f4962eea7d'
-RF_run_id = '3026c33a367b4f7dbd281e8d5ff19db8'
+XGB_run_id = '2533db3e1a5e41a39e3bbb650b346730'
+RF_run_id = 'f1fbf38a090e40d2af561e3bdb0d993e'
 
 # COMMAND ----------
 
