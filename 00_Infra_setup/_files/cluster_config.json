@@ -1,0 +1,26 @@
+{
+    "autoscale": {
+        "min_workers": 1,
+        "max_workers": 5
+    },
+    "cluster_name": "Gab_ML_Cluster",
+    "spark_version": "14.3.x-cpu-ml-scala2.12",
+    "spark_conf": {},
+    "node_type_id": "d3.2xlarge",
+    "ssh_public_keys": [],
+    "custom_tags": {},
+    "spark_env_vars": {
+      "CATALOG_NAME":"users",
+      "SCHEMA_NAME":"gabriele_albini"
+    },
+    "autotermination_minutes": 55,
+    "init_scripts": [
+      {
+        "volumes": {
+          "destination":"/Volumes/users/gabriele_albini/airbnb/cluster_script.sh"}
+      }
+    ],
+    "single_user_name": "gabriele.albini@databricks.com",
+    "data_security_mode": "SINGLE_USER",
+    "runtime_engine": "STANDARD"
+}
