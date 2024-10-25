@@ -1,7 +1,9 @@
 import requests
 import json
 import pandas as pd
+from databricks.sdk import WorkspaceClient
 
+w = WorkspaceClient()
 Endpoint_URL_ = 'https://e2-demo-field-eng.cloud.databricks.com/serving-endpoints/airbnb_ny_pred/invocations'
 scope_name_ = 'Demo_Airbnb_Space'
 secret_name_ = 'pat_cc'
@@ -11,7 +13,7 @@ def create_tf_serving_json(data):
 
 def score_model(dataset):
     url = Endpoint_URL_
-    PAT_ = dbutils.secrets.get(scope=scope_name_, key=secret_name_)
+    PAT_ = w.dbutils.secrets.get(scope=scope_name_, key=secret_name_)
     headers = {
         'Authorization': f'Bearer {PAT_}',
         'Content-Type': 'application/json'}
