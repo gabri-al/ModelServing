@@ -75,7 +75,7 @@ def generate_feature_layout(_fields):
 layout = dbc.Container([
     dbc.Row([
         dbc.Col([
-            html.H2(['Model Serving Inference'])
+            html.H2(['Model Serving Inference with Databricks Apps'])
         ], width=12)
     ], style = {"margin":"0px 0px 15px 0px"}),
     dbc.Row([
