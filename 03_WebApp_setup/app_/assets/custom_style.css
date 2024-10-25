@@ -132,3 +132,12 @@ h4 {
 .footer {
     font-size: 12px;
 }
+
+.footer-img-col {
+    display: inline-block;
+}
+
+.databricks-img, .plotly-img {
+    width: 20px;
+    margin-right: 2px;
+}
